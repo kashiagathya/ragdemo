@@ -1,0 +1,5 @@
+import { runRag } from "@/lib/rag";
+import { z } from "zod";
+export const runtime="nodejs";
+const schema=z.object({prompt:z.string().trim().min(1).max(4000),mode:z.enum(["rag","direct"]).default("rag")});
+export async function POST(request:Request) { const parsed=schema.safeParse(await request.json()); if(!parsed.success) return Response.json({error:"Prompt must be between 1 and 4000 characters."},{status:400}); const executionId=`exec_${Date.now().toString(36)}`; const encoder=new TextEncoder(); const stream=new ReadableStream({async start(controller){try { for await(const event of runRag(parsed.data.prompt,parsed.data.mode,executionId)) controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\\n\\n`)); controller.close(); } catch(error) { controller.enqueue(encoder.encode(`data: ${JSON.stringify({executionId,type:"error",error:error instanceof Error?error.message:"Execution failed"})}\\n\\n`)); controller.close(); } }}); return new Response(stream,{headers:{"Content-Type":"text/event-stream","Cache-Control":"no-cache, no-transform","Connection":"keep-alive"}}); }
