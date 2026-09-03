@@ -20,6 +20,19 @@ Prompt received -> tokenization -> agent decision -> query embedding -> vector s
 
 The UI renders the exact context assembled for the model. It does not expose hidden chain-of-thought.
 
+## Python RAG service
+
+The repository includes a real Python service in `python_rag/`. It handles model-aware tokenization with `tiktoken`, OpenAI embeddings, Pinecone retrieval and upserts, overlapping document chunks, and streamed OpenAI Chat Completions. Set `PYTHON_RAG_URL` to make the Next.js API proxy requests to it.
+
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r python_rag/requirements.txt
+uvicorn python_rag.main:app --reload --port 8001
+```
+
+The Python service requires `OPENAI_API_KEY` and `PINECONE_API_KEY` for live execution. Without `PYTHON_RAG_URL`, the existing local demo path remains available.
+
 ## Tokens, embeddings, and vector search
 
 Tokenization uses a lightweight model-independent approximation that reports `estimated: false` for its deterministic lexical tokens. For a provider-specific tokenizer, replace `tokenize` in `lib/rag.ts` with the tokenizer matching the configured model. Embeddings are real deterministic local vectors in demo mode and the vector dimensions are measured from the returned array. Production Pinecone/OpenAI adapter work belongs behind the existing provider boundary.
@@ -53,6 +66,7 @@ Open `http://localhost:3000`. Click **Run AI demo** to watch a complete local ex
 | `PINECONE_NAMESPACE` | Pinecone namespace. |
 | `EMBEDDING_MODEL` | Configured embedding model name. |
 | `NEXT_PUBLIC_APP_URL` | Public deployment URL. |
+| `PYTHON_RAG_URL` | URL of the Python FastAPI RAG service, for example `http://localhost:8001`. |
 
 No secret is prefixed with `NEXT_PUBLIC_`.
 
